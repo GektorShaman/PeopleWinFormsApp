@@ -15,6 +15,7 @@ namespace PeopleApp
         private Button btnUpdate;
         private Button btnDelete;
         private Button btnClear;
+        private ToolTip toolTip;
 
         public MainForm(DbContextOptions<AppDbContext> options)
         {
@@ -28,6 +29,11 @@ namespace PeopleApp
             Text = "People Manager";
             Width = 800;
             Height = 600;
+
+            toolTip = new ToolTip();
+            toolTip.AutoPopDelay = 5000;
+            toolTip.InitialDelay = 1000;
+            toolTip.ReshowDelay = 500;
 
             dgvPeople = new DataGridView { Left = 10, Top = 10, Width = 760, Height = 300, ReadOnly = true, AutoGenerateColumns = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect };
             dgvPeople.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Id", DataPropertyName = "Id", Visible = false });
@@ -46,7 +52,16 @@ namespace PeopleApp
             dtpBirthdate = new DateTimePicker { Left = 585, Top = 325, Width = 185, Format = DateTimePickerFormat.Short };
 
             btnAdd = new Button { Text = "Добавить", Left = 10, Top = 370, Width = 100 };
-            btnUpdate = new Button { Text = "Обновить", Left = 120, Top = 370, Width = 100 };
+            btnUpdate = new Button
+            {
+                Text = " Обновить",
+                Left = 120,
+                Top = 370,
+                Width = 100,
+                Image = CreateInfoIcon(),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextImageRelation = TextImageRelation.TextBeforeImage
+            };
             btnDelete = new Button { Text = "Удалить", Left = 230, Top = 370, Width = 100 };
             btnClear = new Button { Text = "Очистить", Left = 340, Top = 370, Width = 100 };
 
@@ -54,6 +69,8 @@ namespace PeopleApp
             btnUpdate.Click += BtnUpdate_Click;
             btnDelete.Click += BtnDelete_Click;
             btnClear.Click += BtnClear_Click;
+
+            toolTip.SetToolTip(btnUpdate, "Для выбора записи необходимо двойное нажатие по записи");
 
             Controls.Add(dgvPeople);
             Controls.Add(lblName);
@@ -66,6 +83,20 @@ namespace PeopleApp
             Controls.Add(btnUpdate);
             Controls.Add(btnDelete);
             Controls.Add(btnClear);
+        }
+
+        private Bitmap CreateInfoIcon()
+        {
+            var bitmap = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bitmap))
+            using (var font = new Font("Arial", 10, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.Blue))
+            {
+                g.Clear(Color.Transparent);
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                g.DrawString("i", font, brush, 4, 1);
+            }
+            return bitmap;
         }
 
         private void LoadPeople()
