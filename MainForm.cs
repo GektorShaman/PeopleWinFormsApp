@@ -6,7 +6,6 @@ namespace PeopleApp
     public partial class MainForm : Form
     {
         private readonly AppDbContext _context;
-        private readonly DbContextOptions<AppDbContext> _options;
 
         private DataGridView dgvPeople;
         private TextBox txtName;
@@ -19,9 +18,9 @@ namespace PeopleApp
 
         public MainForm(DbContextOptions<AppDbContext> options)
         {
-            _options = options;
             _context = new AppDbContext(options);
             InitComponent();
+            LoadPeople();
         }
 
         private void InitComponent()
@@ -35,6 +34,7 @@ namespace PeopleApp
             dgvPeople.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Name", DataPropertyName = "Name", Width = 300 });
             dgvPeople.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Age", DataPropertyName = "Age", Width = 80 });
             dgvPeople.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Birthdate", DataPropertyName = "Birthdate", Width = 150 });
+            dgvPeople.CellDoubleClick += DgvPeople_CellDoubleClick;
 
             var lblName = new Label { Text = "Name:", Left = 10, Top = 330, Width = 50 };
             txtName = new TextBox { Left = 70, Top = 325, Width = 300 };
@@ -68,24 +68,186 @@ namespace PeopleApp
             Controls.Add(btnClear);
         }
 
+        private void LoadPeople()
+        {
+            try
+            {
+                var people = _context.People.OrderBy(p => p.Name).ToList();
+                dgvPeople.DataSource = people;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         private void BtnAdd_Click(object sender, EventArgs e)
         {
+            AddPerson();
+        }
 
+        private void AddPerson()
+        {
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+            {
+                MessageBox.Show("Заполните имя", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(txtName.Text, @"^[\p{L}\s\-]+$"))
+            {
+                MessageBox.Show("Имя может содержать только буквы, пробелы и дефисы", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if ((int)numAge.Value == 0)
+            {
+                MessageBox.Show("Выставьте возраст", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dtpBirthdate.Value > DateTime.Today)
+            {
+                MessageBox.Show("Дата рождения не может быть в будущем", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var person = new Person
+            {
+                Name = txtName.Text,
+                Age = (int)numAge.Value,
+                Birthdate = dtpBirthdate.Value.Date
+            };
+
+            try
+            {
+                _context.People.Add(person);
+                _context.SaveChanges();
+                LoadPeople();
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при добавлении записи: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void BtnUpdate_Click(object sender, EventArgs e)
         {
-           
+            UpdatePerson();
+        }
+
+        private void UpdatePerson()
+        {
+            var idObj = dgvPeople.CurrentRow.Cells[0].Value;
+            if (idObj == null) return;
+
+            Guid id = (Guid)idObj;
+
+            var person = _context.People.Find(id);
+            if (person == null)
+            {
+                MessageBox.Show("Запись не найдена", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+            {
+                MessageBox.Show("Заполните имя", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(txtName.Text, @"^[\p{L}\s\-]+$"))
+            {
+                MessageBox.Show("Имя может содержать только буквы, пробелы и дефисы", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if ((int)numAge.Value == 0)
+            {
+                MessageBox.Show("Выставьте возраст", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dtpBirthdate.Value > DateTime.Today)
+            {
+                MessageBox.Show("Дата рождения не может быть в будущем", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            person.Name = txtName.Text;
+            person.Age = (int)numAge.Value;
+            person.Birthdate = dtpBirthdate.Value.Date;
+
+            try
+            {
+                _context.SaveChanges();
+                LoadPeople();
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при обновлении записи: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void BtnDelete_Click(object sender, EventArgs e)
         {
+            DeletePerson();
+        }
 
+        private void DeletePerson()
+        {
+            var idObj = dgvPeople.CurrentRow.Cells[0].Value;
+            if (idObj == null) return;
+
+            Guid id = (Guid)idObj;
+            var confirm = MessageBox.Show("Вы уверены, что хотите удалить выбранную запись?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (confirm != DialogResult.Yes) return;
+
+            var person = _context.People.Find(id);
+            if (person == null) return;
+
+            try
+            {
+                _context.People.Remove(person);
+                _context.SaveChanges();
+                LoadPeople();
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении пользователя: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void BtnClear_Click(object sender, EventArgs e)
         {
+            ClearForm();
+        }
 
+        private void ClearForm()
+        {
+            txtName.Text = string.Empty;
+            numAge.Value = 0;
+            dtpBirthdate.Value = DateTime.Today;
+        }
+
+        private void DgvPeople_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            var idObj = dgvPeople.Rows[e.RowIndex].Cells[0].Value;
+            if (idObj == null) return;
+
+            Guid id = (Guid)idObj;
+            var person = _context.People.FirstOrDefault(p => p.Id == id);
+            if (person == null) return;
+
+            txtName.Text = person.Name;
+            numAge.Value = person.Age;
+            dtpBirthdate.Value = person.Birthdate;
+
+            dgvPeople.Rows[e.RowIndex].Selected = true;
         }
     }
 }
