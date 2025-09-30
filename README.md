@@ -1,5 +1,5 @@
-Простое WinForms приложение (CRUD) с использованием Entity Framework Core и MS SQL Server.
-Код создания базы данных:
+РџСЂРѕСЃС‚РѕРµ WinForms РїСЂРёР»РѕР¶РµРЅРёРµ (CRUD) СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј Entity Framework Core Рё MSSQL Server.
+РљРѕРґ СЃРѕР·РґР°РЅРёСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С…:
 CREATE TABLE [dbo].[People]
 (
 	[Id] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, 
