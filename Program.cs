@@ -14,12 +14,13 @@ namespace PeopleApp
             ApplicationConfiguration.Initialize();
 
             var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
             optionsBuilder.UseSqlServer(connectionString);
 
-            Application.Run(new MainForm());
+            Application.Run(new MainForm(optionsBuilder.Options));
         }
     }
 }
